@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Виртуальные лаборатории | Каталог ПО</title>
+    
+    <!-- Подключение Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Подключение React и ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Подключение Babel для компиляции JSX в браузере -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Шрифт Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        /* Градиентная маска для изображений в карточках */
+        .image-mask {
+            mask-image: linear-gradient(to right, transparent, black 20%);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 20%);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- Иконки (SVG) ---
+        const IconMonitor = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+        );
+        const IconBeaker = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M4.5 3h15"/><path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3"/><path d="M6 14h12"/></svg>
+        );
+        const IconUsers = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        );
+        const IconLayers = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        );
+        const IconZap = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        );
+        const IconGlobe = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        );
+        const IconInfo = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
+        );
+        const IconExternalLink = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+        );
+        const IconCheckCircle = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        );
+        const IconFilter = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        );
+        const IconDollar = ({size=20, className=""}) => (
+             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        );
+        const IconBox3d = ({size=20, className=""}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="7.5 19.79 7.5 14.6 3 12"/><polyline points="21 12 16.5 14.6 16.5 19.79"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        );
+
+        // --- Основной компонент ---
+        const EdTechCatalog = () => {
+            const [activeCategory, setActiveCategory] = React.useState('all');
+            const [activeCost, setActiveCost] = React.useState('all');
+            const [activeTech, setActiveTech] = React.useState('all');
+
+            const categories = [
+                { id: 'all', label: 'Все направления', icon: IconLayers },
+                { id: 'whiteboard', label: 'Доски & Инфраструктура', icon: IconMonitor },
+                { id: 'engagement', label: 'Вовлечение', icon: IconUsers },
+                { id: 'lms', label: 'Обучающие платформы', icon: IconGlobe },
+                { id: 'physics', label: 'Физика', icon: IconZap },
+                { id: 'chemistry', label: 'Химия', icon: IconBeaker },
+            ];
+
+            const costFilters = [
+                { id: 'free', label: 'Бесплатно' },
+                { id: 'freemium', label: 'Условно-бесплатно' },
+                { id: 'paid', label: 'Платно' },
+            ];
+
+            const techFilters = [
+                { id: 'standard', label: 'В интернет браузере' },
+                { id: 'immersive', label: 'Виртуальные очки' },
+            ];
+
+            const products = [
+                // Инфраструктура
+                {
+                    id: 1,
+                    name: "МТС Линк Доски",
+                    category: "whiteboard",
+                    cost: "freemium",
+                    tech: "standard",
+                    tags: ["Cloud", "Collaboration"],
+                    description: "Облачное решение для командной работы. Поддержка интерактивных фреймов.",
+                    details: "Импортозамещающее решение. Бесплатный тариф до 3 досок.",
+                    link: "https://mts-link.ru/",
+                    color: "from-red-500 to-red-600",
+                    image: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&q=80&w=400"
+                },
+                {
+                    id: 2,
+                    name: "sBoard (Эсборд)",
+                    category: "whiteboard",
+                    cost: "freemium",
+                    tech: "standard",
+                    tags: ["Russian Soft", "Mind Maps"],
+                    description: "Платформа для создания сложных диаграмм и ментальных карт.",
+                    details: "Бесплатно до 50 участников. Бесконечный холст.",
+                    link: "https://sboard.online/",
+                    color: "from-blue-400 to-blue-600",
+                    image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?auto=format&fit=crop&q=80&w=400"
+                },
+                {
+                    id: 3,
+                    name: "Gynzy",
+                    category: "whiteboard",
+                    cost: "paid",
+                    tech: "standard",
+                    tags: ["Interactive", "Templates"],
+                    description: "Современная альтернатива SMART Notebook с готовыми уроками.",
+                    details: "Работает прямо из браузера. Требуется подписка.",
+                    link: "https://www.gynzy.com/",
+                    color: "from-green-400 to-emerald-600",
+                    image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=400"
+                },
+                
+                // Вовлечение
+                {
+                    id: 4,
+                    name: "Nearpod",
+                    category: "engagement",
+                    cost: "freemium",
+                    tech: "immersive",
+                    tags: ["VR Support", "Assessment"],
+                    description: "Доставка контента с интегрированным оцениванием в реальном времени.",
+                    details: "Синхронизация экранов. Включает библиотеку VR-экскурсий.",
+                    link: "https://nearpod.com/",
+                    color: "from-indigo-500 to-purple-600",
+                    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=400"
+                },
+                {
+                    id: 5,
+                    name: "Kahoot!",
+                    category: "engagement",
+                    cost: "freemium",
+                    tech: "standard",
+                    tags: ["Gamification", "Quiz"],
+                    description: "Геймифицированная платформа для викторин и проверки знаний.",
+                    details: "Базовая версия бесплатна. Идеально для быстрых опросов.",
+                    link: "https://kahoot.com/",
+                    color: "from-purple-600 to-indigo-800",
+                    image: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&q=80&w=400"
+                },
+
+                // LMS
+                {
+                    id: 6,
+                    name: "Learnetic ISL",
+                    category: "lms",
+                    cost: "paid",
+                    tech: "standard",
+                    tags: ["STEM", "Analytics"],
+                    description: "Комплексные интерактивные научные лаборатории (Физика, Химия).",
+                    details: "Полный цикл обучения. Требуется лицензия организации.",
+                    link: "https://www.learnetic.com/isl/",
+                    color: "from-teal-500 to-cyan-600",
+                    image: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&q=80&w=400"
+                },
+                {
+                    id: 7,
+                    name: "1С:Образование",
+                    category: "lms",
+                    cost: "paid",
+                    tech: "standard",
+                    tags: ["Russian Soft", "Library"],
+                    description: "Мощная облачная LMS с библиотекой из 20 000+ материалов.",
+                    details: "Включает конструкторы тестов. Коммерческая лицензия.",
+                    link: "https://obr.1c.ru/",
+                    color: "from-yellow-500 to-orange-600",
+                    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=400"
+                },
+
+                // Физика
+                {
+                    id: 8,
+                    name: "PhET Simulations",
+                    category: "physics",
+                    cost: "free",
+                    tech: "standard",
+                    tags: ["Global Standard", "HTML5"],
+                    description: "Мировой эталон бесплатных симуляций. Интуитивные 'песочницы'.",
+                    details: "Полностью бесплатно. HTML5 (работает везде).",
+                    link: "https://phet.colorado.edu/",
+                    color: "from-orange-400 to-red-500",
+                    image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=400"
+                },
+                {
+                    id: 9,
+                    name: "VirtuLab (ВиртуЛаб)",
+                    category: "physics",
+                    cost: "free",
+                    tech: "standard",
+                    tags: ["Russian Soft", "2D/3D"],
+                    description: "Каталог лабораторных работ под школьную программу РФ.",
+                    details: "Бесплатный доступ к большинству материалов.",
+                    link: "http://www.virtulab.net/",
+                    color: "from-sky-500 to-blue-700",
+                    image: "https://images.unsplash.com/photo-1581093458791-9f302e6d8359?auto=format&fit=crop&q=80&w=400"
+                },
+                {
+                    id: 10,
+                    name: "VR Physics Lab",
+                    category: "physics",
+                    cost: "paid",
+                    tech: "immersive",
+                    tags: ["VR/AR", "WebGL"],
+                    description: "Фотореалистичная виртуальная среда для профильных классов.",
+                    details: "Лицензируемое ПО. Поддержка VR шлемов и 3D режима.",
+                    link: "https://vizex.ru/",
+                    color: "from-violet-600 to-fuchsia-700",
+                    image: "https://images.unsplash.com/photo-1622979135228-2c118a896a78?auto=format&fit=crop&q=80&w=400"
+                },
+
+                // Химия
+                {
+                    id: 11,
+                    name: "MEL Science",
+                    category: "chemistry",
+                    cost: "paid",
+                    tech: "immersive",
+                    tags: ["Hybrid", "VR Kit"],
+                    description: "Гибрид: реальные реактивы + VR-путешествия внутрь молекул.",
+                    details: "Подписка на физические наборы включает доступ к VR-урокам.",
+                    link: "https://melscience.com/",
+                    color: "from-cyan-400 to-blue-500",
+                    image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&q=80&w=400"
+                },
+                {
+                    id: 12,
+                    name: "PraxiLabs",
+                    category: "chemistry",
+                    cost: "paid",
+                    tech: "immersive",
+                    tags: ["AI Assistant", "3D"],
+                    description: "Иммерсивная 3D-среда с ИИ-лаборантом, предотвращающим ошибки.",
+                    details: "Институциональная подписка. Глубокая аналитика.",
+                    link: "https://praxilabs.com/",
+                    color: "from-emerald-500 to-teal-700",
+                    image: "https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&q=80&w=400"
+                },
+                {
+                    id: 13,
+                    name: "Futuclass",
+                    category: "chemistry",
+                    cost: "paid",
+                    tech: "immersive",
+                    tags: ["VR Only", "Gamified"],
+                    description: "VR-уроки по балансировке реакций и строению атома.",
+                    details: "Покупка модулей. Требуется VR оборудование.",
+                    link: "https://www.futuclass.com/",
+                    color: "from-pink-500 to-rose-600",
+                    image: "https://images.unsplash.com/photo-1555212697-194d092e3b8f?auto=format&fit=crop&q=80&w=400"
+                }
+            ];
+
+            // Логика фильтрации
+            const filteredProducts = products.filter(p => {
+                const matchCategory = activeCategory === 'all' || p.category === activeCategory;
+                const matchCost = activeCost === 'all' || p.cost === activeCost;
+                const matchTech = activeTech === 'all' || p.tech === activeTech;
+                return matchCategory && matchCost && matchTech;
+            });
+
+            // Компонент для плашки фильтра
+            const FilterChip = ({ label, icon: Icon, isActive, onClick }) => (
+                <button 
+                    onClick={onClick}
+                    className={`
+                        flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border
+                        ${isActive 
+                            ? 'bg-slate-800 text-white border-slate-800 shadow-md ring-2 ring-slate-200' 
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'}
+                    `}
+                >
+                    {Icon && <Icon size={14} className={isActive ? 'text-white' : 'text-slate-400'} />}
+                    {label}
+                </button>
+            );
+
+            return (
+                <div className="min-h-screen pb-12">
+                    {/* Header */}
+                    <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm glass-effect">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div>
+                                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600 flex items-center gap-2">
+                                        <IconMonitor size={32} className="text-blue-600" />
+                                        Виртуальные лаборатории
+                                    </h1>
+                                    <p className="text-slate-500 text-sm mt-1">
+                                        Каталог программных продуктов
+                                    </p>
+                                </div>
+                                <div className="flex items-center space-x-2 text-sm text-slate-400 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                                    <IconInfo size={16} />
+                                    <span>Обновлено: Февраль 2026</span>
+                                </div>
+                            </div>
+                            
+                            {/* Primary Navigation Tabs (Categories) */}
+                            <div className="mt-8 flex overflow-x-auto pb-2 scrollbar-hide gap-2">
+                                {categories.map((cat) => {
+                                    const Icon = cat.icon;
+                                    const isActive = activeCategory === cat.id;
+                                    return (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => setActiveCategory(cat.id)}
+                                            className={`
+                                                flex items-center space-x-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all duration-200 border
+                                                ${isActive 
+                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105' 
+                                                    : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'}
+                                            `}
+                                        >
+                                            <Icon size={18} />
+                                            <span className="font-medium">{cat.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* New Filters Row (Chips) - Separated by sides */}
+                            <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                
+                                {/* Left Side: Cost Filters */}
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Стоимость:</span>
+                                     <div className="flex flex-wrap gap-2">
+                                        {costFilters.map(f => (
+                                            <FilterChip 
+                                                key={f.id}
+                                                label={f.label}
+                                                icon={IconDollar}
+                                                isActive={activeCost === f.id}
+                                                onClick={() => setActiveCost(activeCost === f.id ? 'all' : f.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Right Side: Tech Filters & Reset */}
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Тип платформы:</span>
+                                    <div className="flex flex-wrap gap-2">
+                                        {techFilters.map(f => (
+                                            <FilterChip 
+                                                key={f.id}
+                                                label={f.label}
+                                                icon={IconBox3d}
+                                                isActive={activeTech === f.id}
+                                                onClick={() => setActiveTech(activeTech === f.id ? 'all' : f.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                    
+                                     {/* Reset Button (Visible if filters active) */}
+                                    {(activeCost !== 'all' || activeTech !== 'all') && (
+                                        <button 
+                                            onClick={() => { setActiveCost('all'); setActiveTech('all'); }}
+                                            className="text-xs text-red-500 hover:text-red-700 underline transition-colors font-medium sm:ml-2"
+                                        >
+                                            Сброс
+                                        </button>
+                                    )}
+                                </div>
+
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredProducts.map((product) => (
+                                <div 
+                                    key={product.id}
+                                    className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 overflow-hidden flex flex-col h-full transform hover:-translate-y-1"
+                                >
+                                    {/* Card Header */}
+                                    <div className={`h-40 bg-gradient-to-br ${product.color} relative overflow-hidden flex flex-col justify-between p-5`}>
+                                        
+                                        {/* Background Image on Right Side */}
+                                        <img 
+                                            src={product.image} 
+                                            alt={product.name}
+                                            className="absolute right-0 top-0 h-full w-2/3 object-cover opacity-90 image-mask mix-blend-overlay"
+                                        />
+                                        <div className="absolute right-0 top-0 h-full w-2/3 bg-gradient-to-l from-transparent via-transparent to-black/10"></div>
+
+                                        <div className="relative z-10 w-3/4">
+                                            <h3 className="text-white text-xl font-bold tracking-tight shadow-sm drop-shadow-md leading-tight">
+                                                {product.name}
+                                            </h3>
+                                        </div>
+
+                                        <div className="relative z-10 flex flex-wrap gap-2 mt-auto">
+                                            {/* Tech Badge */}
+                                            {product.tech === 'immersive' && (
+                                                <span className="text-[10px] uppercase tracking-wider font-bold bg-purple-500/90 text-white px-2 py-1 rounded backdrop-blur-sm shadow-sm flex items-center gap-1">
+                                                    <IconZap size={10} /> VR/AR
+                                                </span>
+                                            )}
+                                            {/* Cost Badge */}
+                                            <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded backdrop-blur-sm shadow-sm ${
+                                                product.cost === 'free' ? 'bg-green-500/90 text-white' :
+                                                product.cost === 'freemium' ? 'bg-blue-500/90 text-white' :
+                                                'bg-slate-800/80 text-white'
+                                            }`}>
+                                                {product.cost === 'free' ? 'Бесплатно' : product.cost === 'freemium' ? 'Условно-бесплатно' : 'Платно'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Card Body */}
+                                    <div className="p-6 flex-grow flex flex-col">
+                                        <p className="text-slate-600 mb-4 text-sm leading-relaxed">
+                                            {product.description}
+                                        </p>
+                                        
+                                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 mb-6 mt-auto">
+                                            <div className="flex items-start space-x-2">
+                                                <IconCheckCircle size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
+                                                <p className="text-xs text-slate-500 italic">
+                                                    {product.details}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <a 
+                                            href={product.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-full mt-auto flex items-center justify-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-lg transition-all duration-200 font-medium text-sm group-hover:bg-blue-600 shadow-md hover:shadow-lg"
+                                        >
+                                            <span>Перейти к продукту</span>
+                                            <IconExternalLink size={16} />
+                                        </a>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {filteredProducts.length === 0 && (
+                            <div className="text-center py-20 text-slate-400 bg-white rounded-xl border border-dashed border-slate-300">
+                                <div className="flex justify-center mb-4">
+                                    <IconFilter size={48} className="opacity-20" />
+                                </div>
+                                <h3 className="text-lg font-medium text-slate-600">Ничего не найдено</h3>
+                                <p className="text-sm mt-2">Попробуйте изменить параметры фильтрации.</p>
+                                <button 
+                                    onClick={() => { setActiveCost('all'); setActiveTech('all'); setActiveCategory('all'); }}
+                                    className="mt-4 text-blue-600 font-medium hover:underline"
+                                >
+                                    Сбросить все фильтры
+                                </button>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="bg-white border-t border-slate-200 mt-12 py-8">
+                        <div className="max-w-7xl mx-auto px-4 text-center">
+                            <p className="text-slate-400 text-sm">
+                                Создано на основе аналитического отчета «Эволюция ПО для интерактивных досок» (2026).
+                                <br />
+                                Соответствует требованиям СанПиН 2021 РФ к цифровым образовательным средам.
+                            </p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<EdTechCatalog />);
+    </script>
+</body>
+</html>
